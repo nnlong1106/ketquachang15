@@ -21,41 +21,71 @@
                     throw error;
                 }
             }
+            const clubNames = [
+                'Cao Đẳng Kiên Giang',
+                'Cao đẳng Kiên Giang',
+                'Cao Đẳng Kiên G',
+                'Cao đang kiên giang',
+                'Trường Cao đẳng Kiên Giang',
+                'ĐOÀN TRƯỜNG CAO ĐẲNG KIÊN GIANG',
+                'Đoàn trrường cao đẳng Kiên Giang',
+            ];
             const clubsUrl =
-                'https://www.sacombankrunnersclub.com/api/races/clubs?join=&limit=20&race=65d2d916dd065d4ce621cc87&sub=';
-            const membersUrl =
-                'https://www.sacombankrunnersclub.com/race-results/65d2d916dd065d4ce621cc87/scoreboard?limit=1500&qs=&skip=0&team=65e3e6053652db0b4347c2da';
-            const all = document.getElementById('all');
-            Promise.all([fetchData(clubsUrl), fetchData(membersUrl)]).then(([dataClubs, dataMembers]) => {
-                console.log('Data from API 1:', dataClubs);
-                console.log('Data from API 2:', dataMembers);
-            });
-            // fetch(membersUrl)
-            //     .then((data) => data.json())
-            //     .then((data) => {
-            //         let members = data.data.result;
-            //         console.log(members);
-            //         const total = members.reduce((total, currentValue) => {
-            //             return total + currentValue.complete;
-            //         }, 0);
-            //         const toantruong = document.createElement('h1');
-            //         toantruong.innerHTML = 'Tổng toàn trường: ' + total.toFixed(2) + ' Km';
-            //         all.appendChild(toantruong);
+                'https://www.sacombankrunnersclub.com/api/races/clubs?join=&limit=5000&race=65d2d916dd065d4ce621cc87&sub=';
 
-            //         const donvis = ['CNTT', 'KTL', 'DLNN', 'CK', 'DDT', 'NNCNTP', 'XD', 'GV'];
-            //         donvis.forEach((donvi) => {
-            //             let membersDonvi = members.filter((member) => {
-            //                 return member.name.includes(donvi);
-            //             });
-            //             const total = membersDonvi.reduce((total, currentValue) => {
-            //                 return total + currentValue.complete;
-            //             }, 0);
-            //             const h2donvi = document.createElement('h2');
-            //             h2donvi.id = donvi;
-            //             h2donvi.innerHTML = 'Đơn vị ' + donvi + ': ' + total.toFixed(2) + ' Km';
-            //             all.appendChild(h2donvi);
-            //         });
-            //     });
+            fetchData(clubsUrl)
+                .then((dataClubs) => {
+                    if (dataClubs.success) {
+                        const clubs = dataClubs.data;
+                        // Chuyển tất cả tên club thành chữ thường để so sánh không phân biệt hoa thường
+                        const normalizedClubNames = clubNames.map((name) => name.toLowerCase());
+                        // Lọc các phần tử từ mảng clubs theo điều kiện
+                        const filteredClubs = clubs.filter((club) =>
+                            normalizedClubNames.includes(club.name.toLowerCase()),
+                        );
+                        const membersUrls = filteredClubs.reduce((arr, club) => {
+                            arr.push(
+                                `https://www.sacombankrunnersclub.com/race-results/65d2d916dd065d4ce621cc87/scoreboard?limit=2000&qs=&skip=0&team=${club.id}`,
+                            );
+                            return arr;
+                        }, []);
+                        return membersUrls;
+                    }
+                })
+                .then((membersUrls) => {
+                    const fetchPromises = membersUrls.map((url) => fetchData(url));
+                    return Promise.all(fetchPromises);
+                })
+                .then((membersFromClubs) => {
+                    const members = membersFromClubs.reduce((arr, club) => {
+                        return [...arr, ...club.data.result];
+                    }, []);
+                    return members;
+                })
+                .then((members) => {
+                    const all = document.getElementById('all');
+                    console.log(members);
+                    const total = members.reduce((total, currentValue) => {
+                        return total + currentValue.complete;
+                    }, 0);
+                    const toantruong = document.createElement('h2');
+                    toantruong.innerHTML = 'Tổng toàn trường: ' + total.toFixed(2) + ' Km';
+                    all.appendChild(toantruong);
+
+                    const donvis = ['CNTT', 'KTL', 'DLNN', 'CK', 'DDT', 'NNCNTP', 'XD', 'GV'];
+                    donvis.forEach((donvi) => {
+                        let membersDonvi = members.filter((member) => {
+                            return member.name.includes(donvi);
+                        });
+                        const total = membersDonvi.reduce((total, currentValue) => {
+                            return total + currentValue.complete;
+                        }, 0);
+                        const h2donvi = document.createElement('h3');
+                        h2donvi.id = donvi;
+                        h2donvi.innerHTML = 'Đơn vị ' + donvi + ': ' + total.toFixed(2) + ' Km';
+                        all.appendChild(h2donvi);
+                    });
+                });
         </script>
     </body>
 </html>
