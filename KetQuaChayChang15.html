@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả Chạy chặng 15 KGC</title>
+</head>
+<body>
+    <div id="root">
+        <h1 id="all"></h1>
+
+    </div>
+    <script>
+        const all = document.getElementById('all');
+        fetch('https://www.sacombankrunnersclub.com/race-results/65d2d916dd065d4ce621cc87/scoreboard?limit=1500&qs=&skip=0&team=65e3e6053652db0b4347c2da')
+        .then(data => data.json())
+        .then(data => {
+            let members = data.data.result;
+            console.log(members);
+            const total = members.reduce((total, currentValue) => {
+                return total + currentValue.complete;
+            }, 0);
+            const toantruong = document.createElement('h1');
+            toantruong.innerHTML = 'Tổng toàn trường: ' + total.toFixed(2) + ' Km';
+            all.appendChild(toantruong);
+            
+            const donvis = ['CNTT', 'KTL', 'DLNN', 'CK', 'DDT', 'NNCNTP', 'XD', 'GV'];
+            donvis.forEach(donvi => {
+                let membersDonvi = members.filter(member => {
+                    return member.name.includes(donvi);
+                })
+                const total = membersDonvi.reduce((total, currentValue) => {
+                    return total + currentValue.complete;
+                }, 0);
+                const h2donvi = document.createElement('h2');
+                h2donvi.id = donvi;
+                h2donvi.innerHTML = 'Đơn vị ' + donvi + ': ' + total.toFixed(2) + ' Km';
+                all.appendChild(h2donvi);
+            })
+        })
+    </script>
+</body>
+</html>
